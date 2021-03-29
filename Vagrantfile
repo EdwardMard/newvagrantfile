@@ -1,0 +1,2 @@
+echo "My vagrant project"
+				
