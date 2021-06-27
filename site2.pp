@@ -1,4 +1,4 @@
-node 'eduard3' {
+node 'eduard2' {
 
 
   include apt
@@ -21,6 +21,9 @@ node 'eduard3' {
       }
 
 }
+
+
+
 
 
 
