@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
 		vm1.vm.provision "file", source: "/Users/macbook/newvagrantfile/HelloWorld-1.0.jar", destination: "/home/vagrant/HelloWorld-1.0.jar"		
 
                 vm1.vm.provision "shell", inline: <<-SHELL
-                        sudo echo '192.168.56.19 eduard1 puppet' >> /etc/hosts
+                        sudo echo '192.168.56.19 eduard1' >> /etc/hosts
 			sudo echo '192.168.56.20 eduard2' >> /etc/hosts
                         sudo echo '192.168.56.21 eduard3' >> /etc/hosts
                         sudo apt-get -y install ntp
@@ -64,7 +64,7 @@ Vagrant.configure("2") do |config|
 		vm1.vm.provision "file", source: "/Users/macbook/newvagrantfile/HelloWorld-1.0.jar", destination: "/home/vagrant/HelloWorld-1.0.jar"
 
 		vm1.vm.provision "shell", inline: <<-SHELL
-        		sudo echo '192.168.56.19 eduard1 puppet' >> /etc/hosts
+        		sudo echo '192.168.56.19 eduard1' >> /etc/hosts
                 	sudo echo '192.168.56.20 eduard2' >> /etc/hosts
 			sudo echo '192.168.56.21 eduard3' >> /etc/hosts
                 	sudo apt-get -y install ntp
@@ -106,58 +106,79 @@ Vagrant.configure("2") do |config|
 
 		
 		vm2.vm.provision "shell", inline: <<-SHELL
-                	sudo echo '192.168.56.19 eduard1 puppet' >> /etc/hosts
+                	sudo echo '192.168.56.19 eduard1' >> /etc/hosts
                         sudo echo '192.168.56.20 eduard2' >> /etc/hosts
 			sudo echo '192.168.56.21 eduard3' >> /etc/hosts
                         sudo apt-get -y install ntp
                         sudo apt-get update -y
                         wget https://apt.puppetlabs.com/puppet6-release-focal.deb 
 			ls -la
+
+			curl -O https://apt.puppetlabs.com/puppetlabs-release-pc1-xenial.deb
+			sudo mkdir -p /var/lib/jenkins/.ssh/
+			sudo cp -rp /home/vagrant/server_ca /var/lib/jenkins/.ssh/
+			sudo chmod 600 /var/lib/jenkins/.ssh/server_ca
+			
+
                         sudo dpkg -i puppet6-release-focal.deb
-                        sudo apt-get update -y
+                        sudo apt-get update 
                         sudo apt-get install puppetserver -y
 			sudo sed -i 's/.*JAVA_ARGS.*/JAVA_ARGS="-Xms256m -Xmx256m -Djruby.logger.class=com.puppetlabs.jruby_utils.jruby.Slf4jLogger"/' /etc/default/puppetserver
+
+			wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+			sudo sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list'
+
+			wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+#			sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ >  /etc/apt/sources.list.d/jenkins.list'
+			sudo apt-get update
 
 			echo '[main]' >>  /etc/puppetlabs/puppet/puppet.conf
 			echo 'certname = eduard1' >>  /etc/puppetlabs/puppet/puppet.conf
 			echo 'server = eduard1' >>  /etc/puppetlabs/puppet/puppet.conf
-                        echo 'runinterval = 120' >>  /etc/puppetlabs/puppet/puppet.conf			
 
-			sudo apt-get install nginx -y
-			
-                SHELL
-
-		vm2.vm.provision "file", source: "/Users/macbook/newvagrantfile/hello_world", destination: "/tmp/hello_world"
-                vm2.vm.provision "shell", inline: "mv /tmp/hello_world /etc/nginx/sites-enabled/hello_world"
-		vm2.vm.provision "file", source: "/Users/macbook/newvagrantfile/HelloWorld-1.0.jar", destination: "/home/vagrant/HelloWorld-1.0.jar" 
-
-			
-		vm2.vm.provision "shell", inline: <<-SHELL
-
+			echo '[agent]' >>  /etc/puppetlabs/puppet/puppet.conf
+                        echo 'runinterval = 130' >>  /etc/puppetlabs/puppet/puppet.conf			
+						
 			sudo systemctl start puppetserver 
 			sudo systemctl enable puppetserver
-			sleep 110
+			sleep 120
 									
-			sudo /opt/puppetlabs/bin/puppet module install puppetlabs-apt -v 4.2.0
-                        sudo /opt/puppetlabs/bin/puppet module install puppetlabs-stdlib --version 4.21.0
-						
+			sudo /opt/puppetlabs/bin/puppet module install puppetlabs-apt -v 4.2.0  --force
+                        sudo /opt/puppetlabs/bin/puppet module install puppetlabs-stdlib --version 4.21.0  --force
+			sudo /opt/puppetlabs/bin/puppet module install rtyler/jenkins
+		
+#			sudo /home/vagrant/.puppetlabs/etc/code/modules/puppet module install rtyler/jenkins
+
+#			sudo /etc/puppetlabs/code/environments/production/modules/puppet module install puppetlabs-apt -v 4.2.0  --force   
+#			sudo /etc/puppetlabs/code/environments/production/modules/puppet module install puppetlabs-stdlib --version 4.21.0  --force
+#			sudo /etc/puppetlabs/code/environments/production/modules/puppet module install rtyler/jenkins
+
+
 #			sudo /opt/puppetlabs/bin/puppetserver ca list --all
                         sudo /opt/puppetlabs/bin/puppetserver ca sign --all
+			sudo puppetserver ca sign --all
+
 
 			sudo /opt/puppetlabs/bin/puppet agent --test		
-
+			
 		SHELL
 
-	    	vm2.vm.provision "file", source: "/Users/macbook/newvagrantfile/site2.pp", destination: "/tmp/site2.pp"
-	   	vm2.vm.provision "shell", inline: "mv /tmp/site2.pp /etc/puppetlabs/code/environments/production/manifests/site2.pp"	
-		
-		vm2.vm.provision "file", source: "/Users/macbook/newvagrantfile/site.pp", destination: "/tmp/site.pp"
-                vm2.vm.provision "shell", inline: "mv /tmp/site.pp /etc/puppetlabs/code/environments/production/manifests/site.pp"
+                vm2.vm.provision "file", source: "/Users/macbook/newvagrantfile/HelloWorld-1.0.jar", destination: "/home/vagrant/HelloWorld-1.0.jar"
+
+		vm2.vm.provision "file", source: "/Users/macbook/newvagrantfile/puppet_file", destination: "/tmp/puppet_file"
+		vm2.vm.provision "shell", inline: "mv /tmp/puppet_file/eduard1.pp /etc/puppetlabs/code/environments/production/manifests/eduard1.pp"
+		vm2.vm.provision "shell", inline: "mv /tmp/puppet_file/eduard2.pp /etc/puppetlabs/code/environments/production/manifests/eduard2.pp"
+		vm2.vm.provision "shell", inline: "mv /tmp/puppet_file/eduard3.pp /etc/puppetlabs/code/environments/production/manifests/eduard3.pp"
+#		vm2.vm.provision "shell", inline: "mv /tmp/puppet_file/jenkins_file.pp /etc/puppetlabs/code/environments/production/manifests/jenkins_file.pp"
+		vm2.vm.provision "shell", inline: "puppet agent --test"
+
+#		sleep 120
+#		vm2.vm.provision "file", source: "/Users/macbook/newvagrantfile/puppet_file/eduard_domain", destination: "/tmp/puppet_file/eduard_domain"
+                vm2.vm.provision "shell", inline: "sudo systemctl restart nginx"
 
 
 
-	end
-	 		
+	end	 		
 
 end
 
